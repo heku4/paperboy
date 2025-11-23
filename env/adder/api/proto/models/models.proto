@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package models;
+
+option go_package="./models;models";
+
+message ManyCommandResult {
+  repeated int32 operands = 1;
+}
