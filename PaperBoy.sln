@@ -1,0 +1,27 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PaperBoy.Presentation", "src\PaperBoy.Presentation\PaperBoy.Presentation.csproj", "{407E1EAF-2C8C-4D8D-B515-6C512A3EBA65}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "common", "common", "{F72E332C-1B08-4724-A3E2-12D7AF31B82C}"
+	ProjectSection(SolutionItems) = preProject
+		Directory.Packages.props = Directory.Packages.props
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PaperBoy.Core", "src\PaperBoy.Core\PaperBoy.Core.csproj", "{61644D99-5C01-4308-924A-AD614D7C940E}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{407E1EAF-2C8C-4D8D-B515-6C512A3EBA65}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{407E1EAF-2C8C-4D8D-B515-6C512A3EBA65}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{407E1EAF-2C8C-4D8D-B515-6C512A3EBA65}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{407E1EAF-2C8C-4D8D-B515-6C512A3EBA65}.Release|Any CPU.Build.0 = Release|Any CPU
+		{61644D99-5C01-4308-924A-AD614D7C940E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{61644D99-5C01-4308-924A-AD614D7C940E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{61644D99-5C01-4308-924A-AD614D7C940E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{61644D99-5C01-4308-924A-AD614D7C940E}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
