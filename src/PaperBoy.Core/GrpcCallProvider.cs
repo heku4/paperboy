@@ -33,10 +33,10 @@ public class GrpcCallProvider : IGrpcCallProvider
         var callOptions = new CallOptions();
         callOptions.WithHeaders(SetHeaders(headers));
 
-        using GrpcChannel grpcChannel = GrpcChannel.ForAddress(serverUrl);
-        CallInvoker invoker = grpcChannel.CreateCallInvoker();
+        using var grpcChannel = GrpcChannel.ForAddress(serverUrl);
+        var invoker = grpcChannel.CreateCallInvoker();
 
-        byte[] responseBytes = await invoker.AsyncUnaryCall(
+        var responseBytes = await invoker.AsyncUnaryCall(
             grpcMethod,
             serverUrl,
             callOptions,
@@ -48,7 +48,7 @@ public class GrpcCallProvider : IGrpcCallProvider
     private static Metadata SetHeaders(Dictionary<string, string> headers)
     {
         var metadata = new Metadata();
-        foreach (KeyValuePair<string, string> header in headers)
+        foreach (var header in headers)
         {
             metadata.Add(header.Key, header.Value);
         }
