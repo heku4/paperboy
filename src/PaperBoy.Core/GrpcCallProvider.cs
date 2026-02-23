@@ -9,6 +9,12 @@ namespace PaperBoy.Core;
 public class GrpcCallProvider : IGrpcCallProvider
 {
     private readonly ILogger<GrpcCallProvider> _logger;
+
+    public GrpcCallProvider(ILogger<GrpcCallProvider> logger)
+    {
+        _logger = logger;
+    }
+
     /// <summary>
     ///     Prepare and make gRPC call to external server.
     /// </summary>

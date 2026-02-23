@@ -1,0 +1,5 @@
+services:
+  grpc-hello-world:
+    image: ingressnginx/go-grpc-greeter-server:v1.2.7
+    ports:
+      - "50051:50051"

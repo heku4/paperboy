@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 namespace PaperBoy.Presentation.Controllers.Contracts;
 
-public record CallRequest(
+public record RawGrpcCallRequest(
     string ServerAddress,
     string GrpcServiceName,
     string GrpcMethodName,

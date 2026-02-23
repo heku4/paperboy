@@ -6,17 +6,18 @@ using PaperBoy.Presentation.Controllers.Contracts;
 namespace PaperBoy.Presentation.Controllers;
 
 [ApiController]
-public class RawCallController
+[Route("[controller]")]
+public class DebugController
 {
     private readonly IGrpcCallProvider _grpcCallProvider;
 
-    public RawCallController(IGrpcCallProvider grpcCallProvider)
+    public DebugController(IGrpcCallProvider grpcCallProvider)
     {
         _grpcCallProvider = grpcCallProvider;
     }
 
     [HttpPost(nameof(Make))]
-    public async Task<CallResponse> Make([FromBody] CallRequest request)
+    public async Task<RawGrpcCallResponse> Make([FromBody] RawGrpcCallRequest request)
     {
         byte[] responseBytes = await _grpcCallProvider.MakeUnaryCall(
             request.ServerAddress,
@@ -25,6 +26,12 @@ public class RawCallController
             request.GrpcRequestBody,
             request.Headers);
 
-        return new CallResponse(responseBytes);
+        return new RawGrpcCallResponse(responseBytes);
+    }
+
+    [HttpPost(nameof(ConvertToJson))]
+    public async Task<string> ConvertToJson([FromBody] RawGrpcCallRequest request)
+    {
+        return string.Empty;
     }
 }
