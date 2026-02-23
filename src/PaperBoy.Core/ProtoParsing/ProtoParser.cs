@@ -8,18 +8,18 @@ using Microsoft.Extensions.Logging;
 
 namespace PaperBoy.Core.ProtoParsing;
 
-public class ProtoReflectionParser
+public partial class ProtoParser : IProtoParser
 {
-    private readonly ILogger<ProtoReflectionParser> _logger;
+    private readonly ILogger<ProtoParser> _logger;
 
-    public ProtoReflectionParser(ILogger<ProtoReflectionParser> logger)
+    public ProtoParser(ILogger<ProtoParser> logger)
     {
         _logger = logger;
     }
 
-    public string Parse(byte[] descriptorBytes)
+    public string ParseToJsonWithStub(byte[] protoDescription)
     {
-        FileDescriptorSet fileDescriptorSet = FileDescriptorSet.Parser.ParseFrom(descriptorBytes);
+        FileDescriptorSet fileDescriptorSet = FileDescriptorSet.Parser.ParseFrom(protoDescription);
 
         IReadOnlyList<FileDescriptor> fileDescriptor =
             FileDescriptor.BuildFromByteStrings(fileDescriptorSet.File.Select(x => x.ToByteString()));
@@ -29,12 +29,18 @@ public class ProtoReflectionParser
         {
             foreach (ServiceDescriptor service in descriptor.Services)
             {
-                _logger.LogDebug("Service: {ServiceFullName}", service.FullName);
+                if (_logger.IsEnabled(LogLevel.Debug))
+                {
+                    LogServiceServiceFullName(service.FullName);
+                }
 
                 foreach (MethodDescriptor method in service.Methods)
                 {
-                    _logger.LogDebug("Method: {MethodName}", method.Name);
-                    _logger.LogDebug("Request Type: {InputTypeFullName}", method.InputType.FullName);
+                    if (_logger.IsEnabled(LogLevel.Debug))
+                    {
+                        LogMethodMethodName(method.Name);
+                        LogRequestTypeInputTypeFullname(method.InputType.FullName);
+                    }
 
                     IMessage requestMessage = CreateEmptyMessage(method.InputType);
                     sb.Append(JsonFormatter.Default.Format(requestMessage));
@@ -80,4 +86,13 @@ public class ProtoReflectionParser
     {
         return GetDefaultValue(field);
     }
+
+    [LoggerMessage(LogLevel.Debug, "Method: {methodName}")]
+    partial void LogMethodMethodName(string methodName);
+
+    [LoggerMessage(LogLevel.Debug, "Service: {serviceFullName}")]
+    partial void LogServiceServiceFullName(string serviceFullName);
+
+    [LoggerMessage(LogLevel.Debug, "Request Type: {inputTypeFullName}")]
+    partial void LogRequestTypeInputTypeFullname(string inputTypeFullName);
 }
