@@ -29,7 +29,7 @@ public class ProtoParser : IProtoParser
     {
         try
         {
-            byte[] descriptorFileData = await GetDescriptorFileFromProto(fileName, cancellationToken);
+            byte[] descriptorFileData = await GetDescriptorFileFromProto(originalProtoFile, fileName, cancellationToken);
             return _jsonParser.ParseToJsonWithStub(descriptorFileData);
         }
         catch (Exception e)
@@ -51,7 +51,7 @@ public class ProtoParser : IProtoParser
     {
         try
         {
-            byte[] descriptorFileData = await GetDescriptorFileFromProto(fileName, cancellationToken);
+            byte[] descriptorFileData = await GetDescriptorFileFromProto(originalProtoFile, fileName, cancellationToken);
             return _jsonParser.ParseToJson(descriptorFileData);
         }
         catch (Exception e)
@@ -66,8 +66,10 @@ public class ProtoParser : IProtoParser
         return string.Empty;
     }
 
-    private async Task<byte[]> GetDescriptorFileFromProto(string fileName, CancellationToken cancellationToken)
+    private async Task<byte[]> GetDescriptorFileFromProto(Stream file, string fileName, CancellationToken cancellationToken)
     {
+        await SaveProtoFile(fileName, file, cancellationToken);
+
         int exitCode = await _protocDescriptorExecutor.RunProtocAsync(fileName, null, cancellationToken);
         if (exitCode != 0)
         {
@@ -75,5 +77,12 @@ public class ProtoParser : IProtoParser
         }
 
         return await _protocDescriptorExecutor.GetDescriptorFileData(fileName, cancellationToken);
+    }
+
+    private async Task SaveProtoFile(string fileName, Stream descriptorFileData, CancellationToken cancellationToken)
+    {
+        using var sr = new MemoryStream();
+        await descriptorFileData.CopyToAsync(sr, cancellationToken);
+        await File.WriteAllBytesAsync(fileName, sr.ToArray(), cancellationToken);
     }
 }
