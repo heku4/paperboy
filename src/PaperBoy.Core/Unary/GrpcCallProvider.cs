@@ -4,7 +4,7 @@ using Grpc.Core;
 using Grpc.Net.Client;
 using Microsoft.Extensions.Logging;
 
-namespace PaperBoy.Core;
+namespace PaperBoy.Core.Unary;
 
 public class GrpcCallProvider : IGrpcCallProvider
 {

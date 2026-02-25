@@ -1,10 +1,10 @@
 using Google.Protobuf;
 
-namespace PaperBoy.Core;
+namespace PaperBoy.Core.ProtoParsing;
 
 public class ProtoToJsonParser
 {
-    public static string ConvertProtoToJson<T>(byte[] data)
+    public static string ConvertProtoMessageToJson<T>(byte[] data)
         where T : IMessage<T>, new()
     {
         T message = new MessageParser<T>(() => new T()).ParseFrom(data);

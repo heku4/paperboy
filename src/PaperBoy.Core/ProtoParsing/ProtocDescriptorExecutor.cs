@@ -1,5 +1,7 @@
 using System;
 using System.Diagnostics;
+using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
@@ -16,16 +18,16 @@ public class ProtocDescriptorExecutor
 
     public async Task<int> RunProtocAsync(
         string protoFile,
-        string outputDescriptor,
-        string protoIncludePath)
+        string protoIncludePath,
+        CancellationToken cancellationToken)
     {
+        string descriptorFileName = GetDescriptorFileName(protoFile);
+        string importPath = string.IsNullOrWhiteSpace(protoIncludePath) ? string.Empty : $"-I=\"{protoIncludePath}\" ";
+
         var startInfo = new ProcessStartInfo
         {
             FileName = "protoc",
-            Arguments = $"--descriptor_set_out=\"{outputDescriptor}\" " +
-                        $"--include_imports " +
-                        $"-I=\"{protoIncludePath}\" " +
-                        $"\"{protoFile}\"",
+            Arguments = $"--descriptor_set_out=\"{descriptorFileName}\" --include_imports {importPath} {protoFile}",
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false,
@@ -37,10 +39,10 @@ public class ProtocDescriptorExecutor
 
         process.Start();
 
-        string stdout = await process.StandardOutput.ReadToEndAsync();
-        string stderr = await process.StandardError.ReadToEndAsync();
+        string stdout = await process.StandardOutput.ReadToEndAsync(cancellationToken);
+        string stderr = await process.StandardError.ReadToEndAsync(cancellationToken);
 
-        await process.WaitForExitAsync();
+        await process.WaitForExitAsync(cancellationToken);
 
         if (_logger.IsEnabled(LogLevel.Debug) && string.IsNullOrWhiteSpace(stdout) is false)
         {
@@ -58,5 +60,19 @@ public class ProtocDescriptorExecutor
         }
 
         return process.ExitCode;
+    }
+
+    private static string GetDescriptorFileName(string protoFile)
+    {
+        string descriptorFileName = protoFile.Split('.')[0] + ".desc";
+        return descriptorFileName;
+    }
+
+    public async Task<byte[]> GetDescriptorFileData(
+        string protoFile,
+        CancellationToken cancellationToken)
+    {
+        string descriptorFileName = GetDescriptorFileName(protoFile);
+        return await File.ReadAllBytesAsync(descriptorFileName, cancellationToken);
     }
 }

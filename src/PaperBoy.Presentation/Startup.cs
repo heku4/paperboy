@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using PaperBoy.Core;
 
 namespace PaperBoy.Presentation;
 
@@ -17,6 +18,7 @@ public class Startup
 
     public void ConfigureServices(IServiceCollection services)
     {
+        services.AddCoreServices();
     }
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

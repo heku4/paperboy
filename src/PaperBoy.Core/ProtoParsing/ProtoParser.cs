@@ -1,98 +1,79 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Google.Protobuf;
-using Google.Protobuf.Reflection;
+using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
 namespace PaperBoy.Core.ProtoParsing;
 
-public partial class ProtoParser : IProtoParser
+public class ProtoParser : IProtoParser
 {
+    private readonly JsonParser _jsonParser;
     private readonly ILogger<ProtoParser> _logger;
+    private readonly ProtocDescriptorExecutor _protocDescriptorExecutor;
 
-    public ProtoParser(ILogger<ProtoParser> logger)
+    public ProtoParser(
+        JsonParser jsonParser,
+        ProtocDescriptorExecutor protocDescriptorExecutor,
+        ILogger<ProtoParser> logger)
     {
+        _jsonParser = jsonParser;
+        _protocDescriptorExecutor = protocDescriptorExecutor;
         _logger = logger;
     }
 
-    public string ParseToJsonWithStub(byte[] protoDescription)
+    public async Task<string> ParseToJsonWithStub(
+        Stream originalProtoFile,
+        string fileName,
+        CancellationToken cancellationToken)
     {
-        FileDescriptorSet fileDescriptorSet = FileDescriptorSet.Parser.ParseFrom(protoDescription);
-
-        IReadOnlyList<FileDescriptor> fileDescriptor =
-            FileDescriptor.BuildFromByteStrings(fileDescriptorSet.File.Select(x => x.ToByteString()));
-
-        StringBuilder sb = new StringBuilder().Append('{');
-        foreach (FileDescriptor descriptor in fileDescriptor)
+        try
         {
-            foreach (ServiceDescriptor service in descriptor.Services)
+            byte[] descriptorFileData = await GetDescriptorFileFromProto(fileName, cancellationToken);
+            return _jsonParser.ParseToJsonWithStub(descriptorFileData);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e.Message);
+            if (_logger.IsEnabled(LogLevel.Debug))
             {
-                if (_logger.IsEnabled(LogLevel.Debug))
-                {
-                    LogServiceServiceFullName(service.FullName);
-                }
-
-                foreach (MethodDescriptor method in service.Methods)
-                {
-                    if (_logger.IsEnabled(LogLevel.Debug))
-                    {
-                        LogMethodMethodName(method.Name);
-                        LogRequestTypeInputTypeFullname(method.InputType.FullName);
-                    }
-
-                    IMessage requestMessage = CreateEmptyMessage(method.InputType);
-                    sb.Append(JsonFormatter.Default.Format(requestMessage));
-                }
+                _logger.LogDebug(e.StackTrace);
             }
         }
 
-        return sb.Append('}').ToString();
+        return string.Empty;
     }
 
-    private static IMessage CreateEmptyMessage(MessageDescriptor descriptor)
+    public async Task<string> ParseToJson(
+        Stream originalProtoFile,
+        string fileName,
+        CancellationToken cancellationToken)
     {
-        var message = (IMessage)Activator.CreateInstance(descriptor.ClrType);
-
-        foreach (FieldDescriptor field in descriptor.Fields.InDeclarationOrder())
+        try
         {
-            if (field.Accessor != null && !field.IsRepeated)
+            byte[] descriptorFileData = await GetDescriptorFileFromProto(fileName, cancellationToken);
+            return _jsonParser.ParseToJson(descriptorFileData);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e.Message);
+            if (_logger.IsEnabled(LogLevel.Debug))
             {
-                field.Accessor.SetValue(message, GetDefaultValue(field));
+                _logger.LogDebug(e.StackTrace);
             }
         }
 
-        return message;
+        return string.Empty;
     }
 
-    private static object GetDefaultValue(FieldDescriptor field)
+    private async Task<byte[]> GetDescriptorFileFromProto(string fileName, CancellationToken cancellationToken)
     {
-        return field.FieldType switch
+        int exitCode = await _protocDescriptorExecutor.RunProtocAsync(fileName, null, cancellationToken);
+        if (exitCode != 0)
         {
-            FieldType.String => "",
-            FieldType.Int32 => 0,
-            FieldType.Int64 => 0L,
-            FieldType.Bool => false,
-            FieldType.Double => 0.0,
-            FieldType.Float => 0f,
-            FieldType.Enum => field.EnumType.Values.First().Name,
-            FieldType.Message => MakeProtoMessageStub(field),
-            _ => null
-        };
+            throw new Exception($"Protoc exited with code {exitCode}");
+        }
+
+        return await _protocDescriptorExecutor.GetDescriptorFileData(fileName, cancellationToken);
     }
-
-    private static object MakeProtoMessageStub(FieldDescriptor field)
-    {
-        return GetDefaultValue(field);
-    }
-
-    [LoggerMessage(LogLevel.Debug, "Method: {methodName}")]
-    partial void LogMethodMethodName(string methodName);
-
-    [LoggerMessage(LogLevel.Debug, "Service: {serviceFullName}")]
-    partial void LogServiceServiceFullName(string serviceFullName);
-
-    [LoggerMessage(LogLevel.Debug, "Request Type: {inputTypeFullName}")]
-    partial void LogRequestTypeInputTypeFullname(string inputTypeFullName);
 }

@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace PaperBoy.Core;
+namespace PaperBoy.Core.Unary;
 
 public interface IGrpcCallProvider
 {
