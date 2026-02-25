@@ -1,11 +1,10 @@
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using PaperBoy.Core;
 using PaperBoy.Core.ProtoParsing;
 using PaperBoy.Core.Unary;
-using PaperBoy.Presentation.Controllers.Contracts.ProtoParsing;
 using PaperBoy.Presentation.Controllers.Contracts.UnaryCall;
 
 namespace PaperBoy.Presentation.Controllers;
@@ -37,18 +36,18 @@ public class DebugController
     }
 
     [HttpPost(nameof(ConvertToJsonWithStubs))]
-    public async Task<string> ConvertToJsonWithStubs([FromBody]ParseCommand command)
+    public async Task<string> ConvertToJsonWithStubs(IFormFile file)
     {
-        await using Stream fileStream = command.FormFile.OpenReadStream();
+        await using Stream fileStream = file.OpenReadStream();
 
-        return await _protoParser.ParseToJsonWithStub(fileStream, command.FileName, CancellationToken.None);
+        return await _protoParser.ParseToJsonWithStub(fileStream, file.FileName, CancellationToken.None);
     }
 
     [HttpPost(nameof(ConvertToJson))]
-    public async Task<string> ConvertToJson([FromBody]ParseCommand command)
+    public async Task<string> ConvertToJson([FromForm] IFormFile file)
     {
-        await using Stream fileStream = command.FormFile.OpenReadStream();
+        await using Stream fileStream = file.OpenReadStream();
 
-        return await _protoParser.ParseToJson(fileStream, command.FileName, CancellationToken.None);
+        return await _protoParser.ParseToJson(fileStream, file.FileName, CancellationToken.None);
     }
 }
