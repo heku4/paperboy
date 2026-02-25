@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace PaperBoy.Presentation.Controllers.Contracts;
+namespace PaperBoy.Presentation.Controllers.Contracts.UnaryCall;
 
 public record RawGrpcCallRequest(
     string ServerAddress,

@@ -1,7 +1,12 @@
+using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using PaperBoy.Core;
-using PaperBoy.Presentation.Controllers.Contracts;
+using PaperBoy.Core.ProtoParsing;
+using PaperBoy.Core.Unary;
+using PaperBoy.Presentation.Controllers.Contracts.ProtoParsing;
+using PaperBoy.Presentation.Controllers.Contracts.UnaryCall;
 
 namespace PaperBoy.Presentation.Controllers;
 
@@ -10,14 +15,16 @@ namespace PaperBoy.Presentation.Controllers;
 public class DebugController
 {
     private readonly IGrpcCallProvider _grpcCallProvider;
+    private readonly IProtoParser _protoParser;
 
-    public DebugController(IGrpcCallProvider grpcCallProvider)
+    public DebugController(IGrpcCallProvider grpcCallProvider, IProtoParser protoParser)
     {
         _grpcCallProvider = grpcCallProvider;
+        _protoParser = protoParser;
     }
 
-    [HttpPost(nameof(Make))]
-    public async Task<RawGrpcCallResponse> Make([FromBody] RawGrpcCallRequest request)
+    [HttpPost(nameof(MakeUnaryCall))]
+    public async Task<RawGrpcCallResponse> MakeUnaryCall([FromBody] RawGrpcCallRequest request)
     {
         byte[] responseBytes = await _grpcCallProvider.MakeUnaryCall(
             request.ServerAddress,
@@ -29,9 +36,19 @@ public class DebugController
         return new RawGrpcCallResponse(responseBytes);
     }
 
-    [HttpPost(nameof(ConvertToJson))]
-    public async Task<string> ConvertToJson([FromBody] RawGrpcCallRequest request)
+    [HttpPost(nameof(ConvertToJsonWithStubs))]
+    public async Task<string> ConvertToJsonWithStubs([FromBody]ParseCommand command)
     {
-        return string.Empty;
+        await using Stream fileStream = command.FormFile.OpenReadStream();
+
+        return await _protoParser.ParseToJsonWithStub(fileStream, command.FileName, CancellationToken.None);
+    }
+
+    [HttpPost(nameof(ConvertToJson))]
+    public async Task<string> ConvertToJson([FromBody]ParseCommand command)
+    {
+        await using Stream fileStream = command.FormFile.OpenReadStream();
+
+        return await _protoParser.ParseToJson(fileStream, command.FileName, CancellationToken.None);
     }
 }
