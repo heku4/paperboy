@@ -2,6 +2,8 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Google.Protobuf;
+using Google.Protobuf.Reflection;
 using Microsoft.Extensions.Logging;
 
 namespace PaperBoy.Core.ProtoParsing;
@@ -44,26 +46,12 @@ public class ProtoParser : IProtoParser
         return string.Empty;
     }
 
-    public async Task<string> ParseToJson(
-        Stream originalProtoFile,
-        string fileName,
-        CancellationToken cancellationToken)
+    public async Task<string> ParseToJson(Stream originalProtoFile, string fileName, CancellationToken cancellationToken)
     {
-        try
-        {
-            byte[] descriptorFileData = await GetDescriptorFileFromProto(originalProtoFile, fileName, cancellationToken);
-            return _jsonParser.ParseToJson(descriptorFileData);
-        }
-        catch (Exception e)
-        {
-            _logger.LogError(e.Message);
-            if (_logger.IsEnabled(LogLevel.Debug))
-            {
-                _logger.LogDebug(e.StackTrace);
-            }
-        }
+        byte[] descriptorFileData = await GetDescriptorFileFromProto(originalProtoFile, fileName, cancellationToken);
+        FileDescriptorSet descriptorSet = FileDescriptorSet.Parser.ParseFrom(descriptorFileData);
 
-        return string.Empty;
+        return JsonFormatter.Default.Format(descriptorSet);
     }
 
     private async Task<byte[]> GetDescriptorFileFromProto(Stream file, string fileName, CancellationToken cancellationToken)

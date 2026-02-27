@@ -1,7 +1,9 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using Google.Protobuf;
 using Google.Protobuf.Reflection;
 using Microsoft.Extensions.Logging;
@@ -10,6 +12,7 @@ namespace PaperBoy.Core.ProtoParsing;
 
 public partial class JsonParser
 {
+    private const short RecursionLimit = 25;
     private readonly ILogger<JsonParser> _logger;
 
     public JsonParser(ILogger<JsonParser> logger)
@@ -29,31 +32,51 @@ public partial class JsonParser
         IReadOnlyList<FileDescriptor> fileDescriptor =
             FileDescriptor.BuildFromByteStrings(fileDescriptorSet.File.Select(x => x.ToByteString()));
 
-        StringBuilder sb = new StringBuilder().Append('{');
+        StringBuilder sb = new StringBuilder().AppendLine("{");
         foreach (FileDescriptor descriptor in fileDescriptor)
         {
-            foreach (ServiceDescriptor service in descriptor.Services)
+            if (descriptor.Services.Count > 0)
             {
-                if (_logger.IsEnabled(LogLevel.Debug))
-                {
-                    LogServiceFullName(service.FullName);
-                }
-
-                foreach (MethodDescriptor method in service.Methods)
+                foreach (ServiceDescriptor service in descriptor.Services)
                 {
                     if (_logger.IsEnabled(LogLevel.Debug))
                     {
-                        LogMethodMethodName(method.Name);
-                        LogRequestTypeInputTypeFullname(method.InputType.FullName);
+                        LogServiceFullName(service.FullName);
                     }
+                    sb.Append("\"").Append(service.FullName).Append("\"").AppendLine(":").AppendLine("{");
 
-                    IMessage requestMessage = CreateEmptyMessage(method.InputType);
-                    sb.Append(JsonFormatter.Default.Format(requestMessage));
+                    foreach (MethodDescriptor method in service.Methods)
+                    {
+                        sb.Append("\"").Append(method.Name).Append("\"").Append(":").AppendLine("{");
+
+                        sb.Append("\"").Append(method.InputType.FullName).Append("\"").Append(":");
+                        object sampleRequest = CreateDefaultMessage(method.InputType);
+                        sb.Append(JsonSerializer.Serialize(sampleRequest)).AppendLine(",");
+
+                        sb.Append("\"").Append(method.OutputType.FullName).Append("\"").Append(":");
+                        object sampleResponse = CreateDefaultMessage(method.OutputType);
+                        sb.Append(JsonSerializer.Serialize(sampleResponse)).AppendLine(",");
+                        sb.AppendLine("},");
+                    }
+                    sb.AppendLine("}");
+                }
+            }
+            else
+            {
+                if (_logger.IsEnabled(LogLevel.Debug))
+                {
+                    _logger.LogDebug(
+                        "No service definitions was found in descriptor. Trying to parse stand alone messages.");
+                }
+
+                foreach (MessageDescriptor message in descriptor.MessageTypes)
+                {
+                    CreateDefaultMessage(message);
                 }
             }
         }
 
-        return sb.Append('}').ToString();
+        return sb.AppendLine("}").ToString();
     }
 
     public string ParseToJson(byte[] protoDescriptor)
@@ -61,40 +84,100 @@ public partial class JsonParser
         throw new NotImplementedException();
     }
 
-    private static IMessage CreateEmptyMessage(MessageDescriptor descriptor)
+    private static IMessage CreateDefaultMessageForClrTypes(MessageDescriptor descriptor)
     {
         var message = (IMessage)Activator.CreateInstance(descriptor.ClrType);
 
         foreach (FieldDescriptor field in descriptor.Fields.InDeclarationOrder())
         {
-            if (field.Accessor != null && !field.IsRepeated)
+            object value = CreateDefaultValue(field, 0);
+
+            if (field.IsRepeated)
             {
-                field.Accessor.SetValue(message, GetDefaultValue(field));
+                var list = (IList)field.Accessor.GetValue(message);
+                list.Add(value);
+            }
+            else
+            {
+                field.Accessor.SetValue(message, value);
             }
         }
 
         return message;
     }
-
-    private static object GetDefaultValue(FieldDescriptor field)
+   
+    static object CreateDefaultMessage(MessageDescriptor descriptor, int recursionDepth = 0)
     {
-        return field.FieldType switch
+        if (recursionDepth > RecursionLimit)
         {
-            FieldType.String => "",
-            FieldType.Int32 => 0,
-            FieldType.Int64 => 0L,
-            FieldType.Bool => false,
-            FieldType.Double => 0.0,
-            FieldType.Float => 0f,
-            FieldType.Enum => field.EnumType.Values.First().Name,
-            FieldType.Message => MakeProtoMessageStub(field),
-            _ => null
-        };
+            return null;
+        }
+
+        Dictionary<string, object> obj = new();
+
+        foreach (FieldDescriptor field in descriptor.Fields.InDeclarationOrder())
+        {
+            object value = CreateDefaultValue(field, recursionDepth);
+
+            if (field.IsRepeated)
+            {
+                obj[field.Name] = new List<object> { value };
+            }
+            else
+            {
+                obj[field.Name] = value;
+            }
+        }
+
+        return obj;
     }
 
-    private static object MakeProtoMessageStub(FieldDescriptor field)
+    private static object CreateDefaultValue(FieldDescriptor field, int depth)
     {
-        return GetDefaultValue(field);
+        switch (field.FieldType)
+        {
+            case FieldType.String:
+                return "string value example";
+
+            case FieldType.Int32:
+            case FieldType.SInt32:
+            case FieldType.SFixed32:
+                return 123;
+
+            case FieldType.Int64:
+            case FieldType.SInt64:
+            case FieldType.SFixed64:
+                return 123456789L;
+
+            case FieldType.UInt32:
+            case FieldType.Fixed32:
+                return 123u;
+
+            case FieldType.UInt64:
+            case FieldType.Fixed64:
+                return 123456789UL;
+
+            case FieldType.Bool:
+                return true;
+
+            case FieldType.Double:
+                return 1.23;
+
+            case FieldType.Float:
+                return 1.23f;
+
+            case FieldType.Bytes:
+                return ByteString.CopyFromUtf8("bytes");
+
+            case FieldType.Enum:
+                return field.EnumType.Values.First().Number;
+
+            case FieldType.Message:
+                return CreateDefaultMessage(field.MessageType);
+
+            default:
+                return null;
+        }
     }
 
     [LoggerMessage(LogLevel.Debug, "Method: {methodName}")]

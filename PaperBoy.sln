@@ -5,6 +5,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "common", "common", "{F72E332C-1B08-4724-A3E2-12D7AF31B82C}"
 	ProjectSection(SolutionItems) = preProject
 		Directory.Packages.props = Directory.Packages.props
+		Directory.Build.props = Directory.Build.props
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PaperBoy.Core", "src\PaperBoy.Core\PaperBoy.Core.csproj", "{61644D99-5C01-4308-924A-AD614D7C940E}"
@@ -14,6 +15,8 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{593FDD2A-DE85-4CAF-9D3E-495F938B1E5E}"
 	ProjectSection(SolutionItems) = preProject
 		tests\docker-compose.yml = tests\docker-compose.yml
+		tests\example.proto = tests\example.proto
+		tests\testing.md = tests\testing.md
 	EndProjectSection
 EndProject
 Global
