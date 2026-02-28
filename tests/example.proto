@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package adder;
+
+service Adder {
+  rpc Add (AddCommand) returns (AddCommandResponse);
+  rpc AddMany (AddManyCommand) returns (AddCommandResponse);
+}
+
+message AddCommand {
+  int32 left_operand = 1;
+  int32 right_operand = 2;
+}
+
+message AddCommandResponse {
+  int64 result = 1;
+}
+
+message AddManyCommand {
+  int64 result = 1;
+}
