@@ -2,11 +2,19 @@
 using System.Threading.Tasks;
 using Grpc.Core;
 using Grpc.Net.Client;
+using Microsoft.Extensions.Logging;
 
-namespace PaperBoy.Core;
+namespace PaperBoy.Core.Unary;
 
 public class GrpcCallProvider : IGrpcCallProvider
 {
+    private readonly ILogger<GrpcCallProvider> _logger;
+
+    public GrpcCallProvider(ILogger<GrpcCallProvider> logger)
+    {
+        _logger = logger;
+    }
+
     /// <summary>
     ///     Prepare and make gRPC call to external server.
     /// </summary>
@@ -41,6 +49,11 @@ public class GrpcCallProvider : IGrpcCallProvider
             serverUrl,
             callOptions,
             requestBody);
+
+        if (_logger.IsEnabled(LogLevel.Debug))
+        {
+            _logger.LogDebug("Received response bytes {0}", responseBytes.Length);
+        }
 
         return responseBytes;
     }

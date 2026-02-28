@@ -1,7 +1,17 @@
-using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Hosting;
+using PaperBoy.Presentation;
 
-WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+public class Program
+{
+    public static void Main(string[] args)
+    {
+        CreateHostBuilder(args).Build().Run();
+    }
 
-WebApplication app = builder.Build();
-
-app.Run();
+    public static IHostBuilder CreateHostBuilder(string[] args)
+    {
+        return Host.CreateDefaultBuilder(args)
+            .ConfigureWebHostDefaults(webBuilder => { webBuilder.UseStartup<Startup>(); });
+    }
+}
