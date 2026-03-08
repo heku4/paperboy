@@ -5,7 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
-namespace PaperBoy.Core.ProtoParsing;
+namespace PaperBoy.Core.ProtoParsing.Dynamic;
 
 public class ProtocDescriptorExecutor
 {

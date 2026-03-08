@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using PaperBoy.Core.ProtoParsing;
+using PaperBoy.Core.ProtoParsing.Dynamic;
 using PaperBoy.Core.Unary;
 
 namespace PaperBoy.Core;
