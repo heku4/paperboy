@@ -23,11 +23,14 @@ public class ProtocDescriptorExecutor
     {
         string descriptorFileName = GetDescriptorFileName(protoFile);
         string importPath = string.IsNullOrWhiteSpace(protoIncludePath) ? string.Empty : $"-I=\"{protoIncludePath}\" ";
+        const string dynamicTypesPath = "./generated";
+
+        CheckOutputDirectory(dynamicTypesPath);
 
         var startInfo = new ProcessStartInfo
         {
             FileName = "protoc",
-            Arguments = $"--descriptor_set_out=\"{descriptorFileName}\" --include_imports {importPath} {protoFile}",
+            Arguments = $"--descriptor_set_out=\"{descriptorFileName}\" --include_imports {importPath} {protoFile} --csharp_out={dynamicTypesPath}",
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false,
@@ -60,6 +63,14 @@ public class ProtocDescriptorExecutor
         }
 
         return process.ExitCode;
+    }
+
+    private static void CheckOutputDirectory(string dynamicTypesPath)
+    {
+        if (Directory.Exists(dynamicTypesPath) is false)
+        {
+            Directory.CreateDirectory(dynamicTypesPath!);
+        }
     }
 
     private static string GetDescriptorFileName(string protoFile)
