@@ -2,5 +2,6 @@
     <ItemGroup>
         <PackageReference Include="Google.Protobuf"/>
         <PackageReference Include="Grpc.Net.Client"/>
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
     </ItemGroup>
 </Project>
