@@ -1,10 +1,14 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Google.Protobuf;
 using Google.Protobuf.Reflection;
 using Microsoft.Extensions.Logging;
+using PaperBoy.Core.ProtoParsing.Dynamic;
 
 namespace PaperBoy.Core.ProtoParsing;
 
@@ -24,6 +28,7 @@ public class ProtoParser : IProtoParser
         _logger = logger;
     }
 
+
     public async Task<string> ParseToJsonWithStub(
         Stream originalProtoFile,
         string fileName,
@@ -31,7 +36,8 @@ public class ProtoParser : IProtoParser
     {
         try
         {
-            byte[] descriptorFileData = await GetDescriptorFileFromProto(originalProtoFile, fileName, cancellationToken);
+            byte[] descriptorFileData =
+                await GetDescriptorFileFromProto(originalProtoFile, fileName, cancellationToken);
             return _jsonParser.ParseToJsonWithStub(descriptorFileData);
         }
         catch (Exception e)
@@ -46,15 +52,48 @@ public class ProtoParser : IProtoParser
         return string.Empty;
     }
 
-    public async Task<string> ParseToJson(Stream originalProtoFile, string fileName, CancellationToken cancellationToken)
+    public async Task<string> ParseToJsonWithStubDynamic(
+        Stream originalProtoFile,
+        string fileName,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            _ = await GetDescriptorFileFromProto(originalProtoFile, fileName, cancellationToken);
+            Assembly assembly = ProtoToClrTypesCompiler.Compile("./generated");
+            IEnumerable<IMessage> protoMessages = ProtoToClrTypesCompiler.CreateMessages(assembly);
+            IEnumerable<string> serializedMessages =
+                protoMessages.Select(m => _jsonParser.SerializeProtoFromClrMessage(m));
+
+            return string.Join(Environment.NewLine, serializedMessages);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e.Message);
+            if (_logger.IsEnabled(LogLevel.Debug))
+            {
+                _logger.LogDebug(e.StackTrace);
+            }
+        }
+
+        return string.Empty;
+    }
+
+    public async Task<string> ParseToJson(
+        Stream originalProtoFile,
+        string fileName,
+        CancellationToken cancellationToken)
     {
         byte[] descriptorFileData = await GetDescriptorFileFromProto(originalProtoFile, fileName, cancellationToken);
         FileDescriptorSet descriptorSet = FileDescriptorSet.Parser.ParseFrom(descriptorFileData);
 
-        return JsonFormatter.Default.Format(descriptorSet);
+        return _jsonParser.ParseWithDefaultValues(descriptorSet);
     }
 
-    private async Task<byte[]> GetDescriptorFileFromProto(Stream file, string fileName, CancellationToken cancellationToken)
+    private async Task<byte[]> GetDescriptorFileFromProto(
+        Stream file,
+        string fileName,
+        CancellationToken cancellationToken)
     {
         await SaveProtoFile(fileName, file, cancellationToken);
 
