@@ -43,6 +43,14 @@ public class DebugController
         return await _protoParser.ParseToJsonWithStub(fileStream, file.FileName, CancellationToken.None);
     }
 
+    [HttpPost(nameof(ConvertToJsonWithStubsDynamic))]
+    public async Task<string> ConvertToJsonWithStubsDynamic(IFormFile file)
+    {
+        await using Stream fileStream = file.OpenReadStream();
+
+        return await _protoParser.ParseToJsonWithStubDynamic(fileStream, file.FileName, CancellationToken.None);
+    }
+
     [HttpPost(nameof(ConvertToJson))]
     public async Task<string> ConvertToJson([FromForm] IFormFile file)
     {

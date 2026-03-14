@@ -17,6 +17,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{593FDD2A
 		tests\docker-compose.yml = tests\docker-compose.yml
 		tests\example.proto = tests\example.proto
 		tests\testing.md = tests\testing.md
+		tests\debug_with_stub_clr_dynamic.sh = tests\debug_with_stub_clr_dynamic.sh
 	EndProjectSection
 EndProject
 Global
